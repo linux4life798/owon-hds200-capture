@@ -1,0 +1,10 @@
+# Copy into /etc/udev/rules.d/99-owon.rules .
+# sudo udevadm control --reload-rules && sudo udevadm trigger
+
+# OWON HDS272S Oscilloscope
+SUBSYSTEM=="usb", \
+    ATTRS{idVendor}=="5345", \
+    ATTRS{idProduct}=="1234", \
+    TAG+="uaccess" \
+    MODE="660", \
+    GROUP="plugdev"
