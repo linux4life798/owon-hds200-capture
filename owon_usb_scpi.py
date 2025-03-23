@@ -7,6 +7,7 @@ https://github.com/pyusb/pyusb/blob/master/docs/faq.rst
 https://github.com/pyusb/pyusb/blob/master/docs/tutorial.rst
 """
 
+from typing import Any
 import usb.core
 import usb.util
 import time
@@ -60,28 +61,25 @@ class OwonUSBSCPI:
                 f"Device with vendor ID {self.usb_vendor_id:04x} and product ID {self.usb_product_id:04x} not found."
             )
 
-        print("# Reset")
+        # print("# Reset")
         self.device.reset()
-        print("# Reset - finished")
+        # print("# Reset - finished")
 
         # Detach kernel driver if active.
-        print("# Check kernel")
         if self.device.is_kernel_driver_active(0):
-            print("# Remove kernel")
             self.device.detach_kernel_driver(0)
 
         # Set first and only configuration.
-        print("# Set configuration")
         self.device.set_configuration()
-        print("# Set configuration - finished")
-        inf = self.device.get_active_configuration()
-        inf0 = inf[(0,0)]
+        # inf = self.device.get_active_configuration()
+        # inf0 = inf[(0,0)]
 
-        print("# Claim interface")
-        usb.util.claim_interface(self.device, inf0)
-        print("# Claim interface - finished")
+        # print("# Claim interface")
+        # usb.util.claim_interface(self.device, inf0)
+        # print("# Claim interface - finished")
 
         # self.device.reset()
+        # time.sleep(2)
 
     def send_command(self, command: str) -> bool:
         """Send a SCPI command to the device.
@@ -139,7 +137,9 @@ class OwonUSBSCPI:
             data = bytearray()
             bytes_read = 0
             while bytes_read < length:
-                chunk = self.device.read(self.usb_ep_in, min(64, length - bytes_read), self.timeout)
+                chunk = self.device.read(
+                    self.usb_ep_in, min(64, length - bytes_read), self.timeout
+                )
                 data.extend(chunk)
                 bytes_read += len(chunk)
                 print(f"Received {len(chunk)} bytes, total {bytes_read} bytes.")
@@ -197,6 +197,24 @@ class OwonUSBSCPI:
         return False
 
 
+def parse_head_json(response: bytes) -> Any:
+    # Decode first 4 bytes as LSB packet length (unsigned).
+    length = int.from_bytes(response[:4], byteorder="little", signed=False)
+    print(f"Declared length is {length}.")
+    json_str = response[4 : 4 + length].decode("ascii")
+    json_data = json.loads(json_str)
+    return json_data
+
+
+def parse_channel_data(response: bytes) -> list[int]:
+    # Decode first 4 bytes as LSB packet length (unsigned).
+    length = int.from_bytes(response[:4], byteorder="little", signed=False)
+    print(f"Declared length is {length}.")
+    # json_str = response[4:4+length].decode("ascii")
+    bdata = response[4:]
+    return [int.from_bytes([byte], byteorder="big", signed=True) for byte in bdata]
+
+
 if __name__ == "__main__":
     import sys
 
@@ -223,13 +241,43 @@ if __name__ == "__main__":
 
             if cmd == "read":
                 print(owon.read_response())
+            elif cmd == "values":
+                query_head = ":DATa:WAVe:SCReen:head?"
+                query_data_ch1 = ":DATa:WAVe:SCReen:ch1?"
+
+                response_head = owon.query_binary(query_head)
+                response_data_ch1 = owon.query_binary(query_data_ch1)
+
+                head = parse_head_json(response_head)
+                values = parse_channel_data(response_data_ch1)
+                # 10X
+                ch1_probe_atten = head["CHANNEL"][0]["PROBE"]
+                # 200mV
+                ch1_probe_scale = head["CHANNEL"][0]["SCALE"]
+
+                atten = int(ch1_probe_atten[:-1])
+                if ch1_probe_scale.endswith("mV"):
+                    scale = float(ch1_probe_scale[:-2]) / 1000
+                elif ch1_probe_scale.endswith("uV"):
+                    scale = float(ch1_probe_scale[:-2]) / 1000000
+                else:
+                    scale = float(ch1_probe_scale[:-1])
+                conversion = float(atten) * scale * 4.0
+                print(" ".join(f"{float(v) * conversion / 100 : .3f}V" for v in values))
+                continue
 
             if print_mode == "str":
                 print(owon.query(cmd, 40960))
             elif print_mode == "json":
                 try:
-                    response = owon.query(cmd)
-                    json_data = json.loads(response)
+                    response = owon.query_binary(cmd)
+                    # Decode first 4 bytes as LSB packet length (unsigned).
+                    length = int.from_bytes(
+                        response[:4], byteorder="little", signed=False
+                    )
+                    print(f"Declared length is {length}.")
+                    json_str = response[4 : 4 + length].decode("ascii")
+                    json_data = json.loads(json_str)
                     print(json.dumps(json_data, indent=4))
                 except json.JSONDecodeError:
                     print("Failed to decode JSON response.")
@@ -238,8 +286,18 @@ if __name__ == "__main__":
                 bdata = owon.query_binary(cmd)
                 print(" ".join(f"{byte:02x}" for byte in bdata))
             elif print_mode == "int":
-                bdata = owon.query_binary(cmd)
-                print(" ".join(str(int.from_bytes([byte], byteorder='big', signed=True)) for byte in bdata))
+                response = owon.query_binary(cmd)
+                # Decode first 4 bytes as LSB packet length (unsigned).
+                length = int.from_bytes(response[:4], byteorder="little", signed=False)
+                print(f"Declared length is {length}.")
+                # json_str = response[4:4+length].decode("ascii")
+                bdata = response[4:]
+                print(
+                    " ".join(
+                        str(int.from_bytes([byte], byteorder="big", signed=True))
+                        for byte in bdata
+                    )
+                )
 
     except KeyboardInterrupt:
         print("\nExiting...")
