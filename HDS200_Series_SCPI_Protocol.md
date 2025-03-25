@@ -94,10 +94,14 @@ Response: `XXXX,XXXXXXX,2128009,V2.1.1.5`
 
 | Command | Parameters | Description |
 |---------|------------|-------------|
-| `:HORIzontal:SCALe <value>`<br>`:HORIzontal:SCALe?` | Time base values from 2.0ns to 1000s | Sets/Queries main timebase scale. |
+| `:HORIzontal:SCALe <value>`<br>`:HORIzontal:SCALe?` | Time base values from 2.0ns to 1000s, options shown bellow | Sets/Queries main timebase scale. |
 | `:HORIzontal:OFFset <value>`<br>`:HORIzontal:OFFset?` | Integer: Grid offset<br>Default: 0 | Sets/Queries horizontal offset. |
 
-Time base values: `2.0ns`, `5.0ns`, `10.0ns`, `20.0ns`, `50.0ns`, `100ns`, `200ns`, `500ns`, `1.0us`, `2.0us`, `5.0us`, `10us`, `20us`, `50us`, `100us`, `200us`, `500us`, `1.0ms`, `2.0ms`, `5.0ms`, `10ms`, `20ms`, `50ms`, `100ms`, `200ms`, `500ms`, `1.0s`, `2.0s`, `5.0s`, `10s`, `20s`, `50s`, `100s`, `200s`, `500s`, `1000s`
+Time base values:
+* `2.0ns`, `5.0ns`, `10.0ns`, `20.0ns`, `50.0ns`, `100ns`, `200ns`, `500ns`
+* `1.0us`, `2.0us`, `5.0us`, `10us`, `20us`, `50us`, `100us`, `200us`, `500us`
+* `1.0ms`, `2.0ms`, `5.0ms`, `10ms`, `20ms`, `50ms`, `100ms`, `200ms`, `500ms`
+* `1.0s`, `2.0s`, `5.0s`, `10s`, `20s`, `50s`, `100s`, `200s`, `500s`, `1000s`
 
 ### Acquisition Commands
 
@@ -113,8 +117,8 @@ Time base values: `2.0ns`, `5.0ns`, `10.0ns`, `20.0ns`, `50.0ns`, `100ns`, `200n
 | `:CH<n>:DISPlay <bool>`<br>`:CH<n>:DISPlay?` | n: `1` or `2`<br>bool: `OFF` or `ON`<br>Default: `OFF` | Turns/Queries channel display on/off. |
 | `:CH<n>:COUPling <coupling>`<br>`:CH<n>:COUPling?` | n: `1` or `2`<br>coupling: `AC`, `DC`, or `GND`<br>Default: `DC` | Sets/Queries channel coupling mode. |
 | `:CH<n>:PROBe <atten>`<br>`:CH<n>:PROBe?` | n: `1` or `2`<br>atten: `1X`, `10X`, `100X`, `1000X`, `10000X` | Sets/Queries probe attenuation ratio. |
-| `:CH<n>:SCALe <scale>`<br>`:CH<n>:SCALe?` | n: `1` or `2`<br>scale: Depends on probe attenuation | Sets/Queries vertical scale. |
-| `:CH<n>:OFFSet <offset>`<br>`:CH<n>:OFFSet?` | n: `1` or `2`<br>offset: -200 to 200<br>Default: 0 | Sets/Queries vertical offset. |
+| `:CH<n>:SCALe <scale>`<br>`:CH<n>:SCALe?` | n: `1` or `2`<br>scale: shown bellow | Sets/Queries vertical scale in volts. |
+| `:CH<n>:OFFSet <offset>`<br>`:CH<n>:OFFSet?` | n: `1` or `2`<br>offset: -200 to 200<br>Default: 0 | Sets/Queries vertical offset in volts (units not present). |
 
 Available scales by probe attenuation:
 - 1X: `10.0mV`, `20.0mV`, `50.0mV`, `100mV`, `200mV`, `500mV`, `1.00V`, `2.00V`, `5.00V`, `10.0V`
@@ -130,7 +134,7 @@ Available scales by probe attenuation:
 | Command | Description |
 |---------|-------------|
 | `:DATa:WAVe:SCReen:HEAD?` | Returns file header of screen waveform data in JSON format |
-| `:DATa:WAVe:SCReen:CH<x>?` | Returns screen waveform data of specified channel (x: CH1 or CH2)<br>**Note**: Data points are recorded as 8-bit, each point uses two bytes in little-endian order. |
+| `:DATa:WAVe:SCReen:CH<x>?` | Returns screen waveform data of specified channel (x: CH1 or CH2)<br>**Note**: Data points are recorded as signed 8-bit values. The reference program seems to average each two points. |
 
 ### Trigger Commands
 
