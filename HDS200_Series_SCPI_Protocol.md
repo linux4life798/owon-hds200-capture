@@ -117,7 +117,7 @@ Time base values:
 | `:CH<n>:DISPlay <bool>`<br>`:CH<n>:DISPlay?` | n: `1` or `2`<br>bool: `OFF` or `ON`<br>Default: `OFF` | Turns/Queries channel display on/off. |
 | `:CH<n>:COUPling <coupling>`<br>`:CH<n>:COUPling?` | n: `1` or `2`<br>coupling: `AC`, `DC`, or `GND`<br>Default: `DC` | Sets/Queries channel coupling mode. |
 | `:CH<n>:PROBe <atten>`<br>`:CH<n>:PROBe?` | n: `1` or `2`<br>atten: `1X`, `10X`, `100X`, `1000X`, `10000X` | Sets/Queries probe attenuation ratio. |
-| `:CH<n>:SCALe <scale>`<br>`:CH<n>:SCALe?` | n: `1` or `2`<br>scale: shown bellow | Sets/Queries vertical scale in volts. |
+| `:CH<n>:SCALe <scale>`<br>`:CH<n>:SCALe?` | n: `1` or `2`<br>scale: shown bellow | Sets/Queries vertical scale in volts, as the device would display, accounting for prob attenuation. |
 | `:CH<n>:OFFSet <offset>`<br>`:CH<n>:OFFSet?` | n: `1` or `2`<br>offset: -200 to 200<br>Default: 0 | Sets/Queries vertical offset in volts (units not present). |
 
 Available scales by probe attenuation:
@@ -133,8 +133,62 @@ Available scales by probe attenuation:
 
 | Command | Description |
 |---------|-------------|
-| `:DATa:WAVe:SCReen:HEAD?` | Returns file header of screen waveform data in JSON format |
+| `:DATa:WAVe:SCReen:HEAD?` | Returns file header of screen waveform data in JSON format. |
 | `:DATa:WAVe:SCReen:CH<x>?` | Returns screen waveform data of specified channel (x: CH1 or CH2)<br>**Note**: Data points are recorded as signed 8-bit values. The reference program seems to average each two points. |
+
+The device displayed scale is the product of the probe and scale, from this head.
+For example, when the head query reports a scale of `200mV` and a probe of
+`10X`, the device would actually display a scale of `2.00V` per division.
+
+Do note that these data points are not the values directly from the ADC.
+If you are looking the exact ADC values (4k or 8k of them), you would need to
+save the waveform on the device and download the CSV file using the mass
+storage mode. That being said, we can take these simplified screen data points
+and convert them to their approximate voltages, using the bellow conversion
+formula:
+
+$$
+\frac{\text{value} - \text{ch\_offset}}{100} \times 4 \times \text{ch\_probe\_atten} \times \text{ch\_scale}
+$$
+
+*The scale and probe values are the ones from the head JSON header.*
+
+<details>
+<summary>Example:</summary>
+
+1. Query `:DATa:WAVe:SCReen:head?`
+
+    ```json
+    {
+      //..
+      "CHANNEL": [
+            {
+                "NAME": "CH1",
+                "DISPLAY": "ON",
+                "COUPLING": "DC",
+                "PROBE": "10X",
+                "SCALE": "200mV",
+                "OFFSET": 50,
+                "FREQUENCE": 1000.0
+            },
+            //...
+      ]
+    }
+    ```
+
+2. Query `:DATa:WAVe:SCReen:ch1?`
+
+    ```
+    90 90 90 90 90 90 ...
+    ```
+3. The first value of `90` would equate to the following voltage:
+
+    $$
+    \frac{90 - 50}{100} \times 4 \times 10 \times 0.2\text{V}
+    = \frac{40}{100} \times 4 \times 2\text{V}
+    = 3.2\text{V}
+    $$
+</details>
 
 ### Trigger Commands
 
