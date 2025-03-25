@@ -11,3 +11,7 @@ with all [HDS200 Series Oscilloscopes](https://www.owon.com.hk/products_owon_hds
 
 It is also possible that this is compatible with the OWON PDS6062T Oscilloscope, since my HDS272S identifies itself with a USB vendor and product ID of the PDS6062T.
 This could simply be due to OWON using the same vendor/product ID for all devices.
+
+## Experiments
+
+Checkout the WebUSB demos/experiment [here](https://linux4life798.github.io/owon-hds200-capture/webusb/).
