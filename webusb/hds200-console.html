@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OWON HDS200 WebUSB Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+        #log {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            min-height: 200px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+        .control-panel {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .display-options {
+            margin-top: 10px;
+        }
+        .clear-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>OWON HDS200 WebUSB Demo</h1>
+    <div>
+        <button id="connectBtn">Connect to Device</button>
+        <button id="getIdnBtn" disabled>Get Device ID (*IDN?)</button>
+        <button id="clearLogBtn" class="clear-btn">Clear Log</button>
+    </div>
+
+    <div class="control-panel" id="commandPanel" style="display: none;">
+        <h2>Command Control</h2>
+        <div class="form-group">
+            <label for="commandInput">SCPI Command:</label>
+            <input type="text" id="commandInput" placeholder="Enter command (e.g., :CH1:DISPlay?)" value="*IDN?">
+        </div>
+        <div class="form-group">
+            <label for="bufferSize">Response Buffer Size:</label>
+            <input type="number" id="bufferSize" value="1024" min="1" max="4096">
+        </div>
+        <div class="display-options">
+            <label><input type="radio" name="responseFormat" value="text" checked> Text Mode</label>
+            <label><input type="radio" name="responseFormat" value="hex"> Hex Mode</label>
+        </div>
+        <button id="sendCommandBtn">Send Command</button>
+    </div>
+
+    <h2>Device Log:</h2>
+    <div id="log"></div>
+
+    <script>
+        // Check if WebUSB is supported
+        if (!navigator.usb) {
+            logMessage('WebUSB is not supported in this browser. Try Chrome or Edge.');
+        }
+
+        let device = null;
+        const connectBtn = document.getElementById('connectBtn');
+        const getIdnBtn = document.getElementById('getIdnBtn');
+        const logElement = document.getElementById('log');
+        const commandPanel = document.getElementById('commandPanel');
+        const commandInput = document.getElementById('commandInput');
+        const bufferSizeInput = document.getElementById('bufferSize');
+        const sendCommandBtn = document.getElementById('sendCommandBtn');
+        const clearLogBtn = document.getElementById('clearLogBtn');
+
+        function logMessage(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `${timestamp}: ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight; // Auto-scroll to bottom
+            console.log(message);
+        }
+
+        // OWON HDS200 Series USB info
+        const OWON_VENDOR_ID = 0x5345;  // OWON vendor ID
+        const PRODUCT_ID = 0x1234;      // HDS200 series product ID
+
+        // Buffer to Hex string converter
+        function bufferToHex(buffer) {
+            return Array.from(new Uint8Array(buffer))
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join(' ');
+        }
+
+        // Send a command and get response
+        async function sendCommand(command, bufferSize = 64, formatAsHex = false) {
+            if (!device) {
+                logMessage('No device connected');
+                return;
+            }
+
+            try {
+                // Ensure command ends with newline
+                if (!command.endsWith('\n')) {
+                    command += '\n';
+                }
+
+                // Convert command to ArrayBuffer
+                const encoder = new TextEncoder();
+                const data = encoder.encode(command);
+
+                // Send the command
+                logMessage(`Sending command: "${command.trim()}"`);
+                await device.transferOut(1, data);
+
+                // Read the response
+                const result = await device.transferIn(1, bufferSize);
+
+                if (result.data && result.data.byteLength > 0) {
+                    if (formatAsHex) {
+                        const hexData = bufferToHex(result.data.buffer);
+                        logMessage(`Response (hex): ${hexData}`);
+                    } else {
+                        const decoder = new TextDecoder();
+                        const response = decoder.decode(result.data);
+                        logMessage(`Response: ${response}`);
+                    }
+                } else {
+                    logMessage('No data received or empty response');
+                }
+
+                return result;
+            } catch (error) {
+                logMessage(`Error: ${error.message}`);
+                return null;
+            }
+        }
+
+        connectBtn.addEventListener('click', async () => {
+            try {
+                // Request the device
+                device = await navigator.usb.requestDevice({
+                    filters: [{
+                        vendorId: OWON_VENDOR_ID,
+                        productId: PRODUCT_ID
+                    }]
+                });
+
+                logMessage(`Device selected: ${device.productName || 'OWON oscilloscope'}`);
+
+                // Open the device
+                await device.open();
+                logMessage('Device opened');
+
+                // Select configuration #1
+                await device.selectConfiguration(1);
+                logMessage('Configuration selected');
+
+                // Claim interface #0 (assuming it's the control interface)
+                await device.claimInterface(0);
+                logMessage('Interface claimed');
+
+                // Enable buttons and command panel
+                getIdnBtn.disabled = false;
+                commandPanel.style.display = 'block';
+
+            } catch (error) {
+                logMessage(`Error: ${error.message}`);
+            }
+        });
+
+        getIdnBtn.addEventListener('click', async () => {
+            await sendCommand('*IDN?', 64, false);
+        });
+
+        sendCommandBtn.addEventListener('click', async () => {
+            const command = commandInput.value.trim();
+            const bufferSize = parseInt(bufferSizeInput.value, 10);
+            const formatAsHex = document.querySelector('input[name="responseFormat"]:checked').value === 'hex';
+
+            if (!command) {
+                logMessage('Please enter a command');
+                return;
+            }
+
+            await sendCommand(command, bufferSize, formatAsHex);
+        });
+
+        clearLogBtn.addEventListener('click', () => {
+            logElement.textContent = '';
+        });
+
+        // Allow pressing Enter in the command input
+        commandInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') {
+                sendCommandBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>

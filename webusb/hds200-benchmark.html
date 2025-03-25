@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OWON HDS200 Waveform Data Polling Benchmark</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        button {
+            padding: 10px 15px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+
+        #log {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            min-height: 200px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+
+        .result {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e9f7ef;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        progress {
+            width: 100%;
+            height: 20px;
+            margin-top: 10px;
+        }
+
+        .settings {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .checkbox-group {
+            margin: 10px 0;
+        }
+
+        .checkbox-group label {
+            margin-right: 15px;
+        }
+
+        .section-title {
+            background-color: #e1eaf7;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 20px 0 10px 0;
+            font-weight: bold;
+        }
+
+        .info-panel {
+            background-color: #f0f8ff;
+            border-left: 4px solid #4682b4;
+            padding: 10px 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        header {
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .result-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .metric-card {
+            flex: 1;
+            min-width: 200px;
+            background-color: #e9f7ef;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            color: #555;
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #777;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>OWON HDS200 Waveform Data Polling Benchmark</h1>
+        <div class="info-panel">
+            <p><strong>What this tool measures:</strong> This benchmark tests how fast your oscilloscope can respond to
+                waveform data requests using the <code>:DATa:WAVe:SCReen:CH<i>n</i>?</code> SCPI command. It measures
+                the maximum polling rate for retrieving screen waveform data. There is no way to limit how many data
+                points are transferred, so on each <i>iteration</i> the full 600 data points are transferred for a given
+                channel.</p>
+        </div>
+    </header>
+
+    <div class="section-title">Benchmark Configuration</div>
+    <div class="settings">
+        <div>
+            <label for="iterations">Number of polling iterations:</label>
+            <input type="number" id="iterations" value="100" min="1" max="10000">
+            <small>(Higher numbers give more accurate results but take longer)</small>
+        </div>
+
+        <div class="checkbox-group">
+            <label><strong>Channels to poll:</strong></label>
+            <label><input type="checkbox" id="ch1Checkbox" checked> CH1</label>
+            <label><input type="checkbox" id="ch2Checkbox"> CH2</label>
+        </div>
+    </div>
+
+    <div class="section-title">Device Connection</div>
+    <div>
+        <button id="connectBtn">Connect to Oscilloscope</button>
+        <button id="startBenchmarkBtn" disabled>Start Waveform Polling Benchmark</button>
+        <button id="stopBenchmarkBtn" disabled>Stop Benchmark</button>
+    </div>
+
+    <div class="section-title">Benchmark Results</div>
+    <div class="result-metrics">
+        <div class="metric-card">
+            <div class="metric-label">Polling Rate (iterations/sec)</div>
+            <div class="metric-value" id="pollRateValue">---</div>
+            <div>Complete iterations per second</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Channel Throughput</div>
+            <div class="metric-value" id="channelRateValue">---</div>
+            <div>Waveform data reads per second</div>
+        </div>
+    </div>
+
+    <div>
+        <progress id="progressBar" value="0" max="100"></progress>
+        <div id="progressText">0%</div>
+    </div>
+
+    <div class="section-title">Activity Log</div>
+    <div id="log"></div>
+
+    <footer>
+        <p>This benchmark helps determine the maximum waveform data acquisition rate that can be achieved with your OWON
+            HDS200 Series oscilloscope via WebUSB.</p>
+    </footer>
+
+    <script>
+        // Check if WebUSB is supported
+        if (!navigator.usb) {
+            logMessage('WebUSB is not supported in this browser. Try Chrome or Edge.');
+        }
+
+        let device = null;
+        let benchmarkRunning = false;
+        let completedIterations = 0;
+        let startTime = 0;
+        let controller = null;
+
+        const connectBtn = document.getElementById('connectBtn');
+        const startBenchmarkBtn = document.getElementById('startBenchmarkBtn');
+        const stopBenchmarkBtn = document.getElementById('stopBenchmarkBtn');
+        const logElement = document.getElementById('log');
+        const pollRateValue = document.getElementById('pollRateValue');
+        const channelRateValue = document.getElementById('channelRateValue');
+        const iterationsInput = document.getElementById('iterations');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+
+        const ch1Checkbox = document.getElementById('ch1Checkbox');
+        const ch2Checkbox = document.getElementById('ch2Checkbox');
+
+        // Create encoder once
+        const encoder = new TextEncoder();
+
+        // Fixed buffer size at 2048 bytes
+        const BUFFER_SIZE = 2048;
+
+        // OWON HDS200 Series USB info
+        const OWON_VENDOR_ID = 0x5345;  // OWON vendor ID
+        const PRODUCT_ID = 0x1234;      // HDS200 series product ID
+
+        function logMessage(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `${timestamp}: ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight; // Auto-scroll to bottom
+            console.log(message);
+        }
+
+        // Update progress
+        function updateProgress(completed, total) {
+            const percentage = Math.round((completed / total) * 100);
+            progressBar.value = percentage;
+            progressText.textContent = `${percentage}% (${completed}/${total} iterations)`;
+        }
+
+        // Update metrics display
+        function updateMetrics(pollRate, channelRate) {
+            pollRateValue.textContent = `${pollRate.toFixed(2)}`;
+            channelRateValue.textContent = `${channelRate.toFixed(2)}`;
+        }
+
+        // Get selected channels for the benchmark
+        function getSelectedChannels() {
+            const channels = [];
+            if (ch1Checkbox.checked) channels.push(1);
+            if (ch2Checkbox.checked) channels.push(2);
+            return channels;
+        }
+
+        // Benchmark function
+        async function runBenchmark(totalIterations) {
+            benchmarkRunning = true;
+            completedIterations = 0;
+            startTime = performance.now();
+            controller = new AbortController();
+            const signal = controller.signal;
+
+            try {
+                // Get selected channels
+                const channels = getSelectedChannels();
+                if (channels.length === 0) {
+                    logMessage('Error: Please select at least one channel to poll');
+                    throw new Error('No channels selected');
+                }
+
+                logMessage(`Starting waveform data polling benchmark with ${totalIterations} iterations...`);
+                logMessage(`Channels: ${channels.join(', ')} on every iteration`);
+                logMessage(`Buffer size: ${BUFFER_SIZE} bytes per waveform`);
+
+                updateProgress(0, totalIterations);
+
+                // Prepare commands for each channel
+                const commands = channels.map(ch => {
+                    const commandStr = `:DATa:WAVe:SCReen:CH${ch}?\n`;
+                    return encoder.encode(commandStr);
+                });
+
+                // Process in smaller batches to update UI and allow cancellation
+                const batchSize = 10;
+
+                for (let i = 0; i < totalIterations && !signal.aborted; i += batchSize) {
+                    const currentBatchSize = Math.min(batchSize, totalIterations - i);
+
+                    for (let j = 0; j < currentBatchSize && !signal.aborted; j++) {
+                        // Query all selected channels in each iteration
+                        for (const command of commands) {
+                            // Send the command
+                            await device.transferOut(1, command);
+
+                            // Read the response
+                            const dataResult = await device.transferIn(1, BUFFER_SIZE);
+                            if (dataResult.length == 0) {
+                                throw new Error('Incomplete data received');
+                            }
+                        }
+
+                        // Count as one iteration when all channels are done
+                        completedIterations++;
+                    }
+
+                    // Update progress
+                    updateProgress(completedIterations, totalIterations);
+
+                    // Calculate current rate for display
+                    const currentTime = performance.now();
+                    const elapsedSeconds = (currentTime - startTime) / 1000;
+                    const currentRate = completedIterations / elapsedSeconds;
+
+                    // Calculate channel polling rate
+                    const channelsPerIteration = channels.length;
+                    const channelPollingRate = currentRate * channelsPerIteration;
+
+                    // Update metrics display
+                    updateMetrics(currentRate, channelPollingRate);
+
+                    // Allow UI to update
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
+
+                if (!signal.aborted) {
+                    // Final calculation
+                    const endTime = performance.now();
+                    const totalTimeSeconds = (endTime - startTime) / 1000;
+                    const opsPerSecond = completedIterations / totalTimeSeconds;
+
+                    // Calculate channel polling rate
+                    const channelsPerIteration = channels.length;
+                    const channelPollingRate = opsPerSecond * channelsPerIteration;
+
+                    logMessage(`Benchmark completed: ${completedIterations} iterations in ${totalTimeSeconds.toFixed(2)} seconds`);
+                    logMessage(`Waveform polling rate: ${opsPerSecond.toFixed(2)} iterations/second`);
+                    logMessage(`Channel data throughput: ${channelPollingRate.toFixed(2)} waveforms/second`);
+
+                    // Update metrics display
+                    updateMetrics(opsPerSecond, channelPollingRate);
+                }
+            } catch (error) {
+                logMessage(`Error during benchmark: ${error.message}`);
+            } finally {
+                benchmarkRunning = false;
+                startBenchmarkBtn.disabled = false;
+                stopBenchmarkBtn.disabled = true;
+            }
+        }
+
+        connectBtn.addEventListener('click', async () => {
+            try {
+                // Request the device
+                device = await navigator.usb.requestDevice({
+                    filters: [{
+                        vendorId: OWON_VENDOR_ID,
+                        productId: PRODUCT_ID
+                    }]
+                });
+
+                logMessage(`Device selected: ${device.productName || 'OWON oscilloscope'}`);
+
+                // Open the device
+                await device.open();
+                logMessage('Oscilloscope connection opened');
+
+                // Select configuration #1
+                await device.selectConfiguration(1);
+                logMessage('USB configuration selected');
+
+                // Claim interface #0 (assuming it's the control interface)
+                await device.claimInterface(0);
+                logMessage('Interface claimed for communication');
+
+                // Enable benchmark button
+                startBenchmarkBtn.disabled = false;
+
+            } catch (error) {
+                logMessage(`Connection error: ${error.message}`);
+            }
+        });
+
+        startBenchmarkBtn.addEventListener('click', async () => {
+            if (!device) {
+                logMessage('No oscilloscope connected');
+                return;
+            }
+
+            if (benchmarkRunning) {
+                logMessage('Benchmark already running');
+                return;
+            }
+
+            const channels = getSelectedChannels();
+            if (channels.length === 0) {
+                logMessage('Please select at least one channel to poll');
+                return;
+            }
+
+            const iterations = parseInt(iterationsInput.value, 10);
+            if (isNaN(iterations) || iterations < 1) {
+                logMessage('Please enter a valid number of iterations');
+                return;
+            }
+
+            startBenchmarkBtn.disabled = true;
+            stopBenchmarkBtn.disabled = false;
+
+            // Run the benchmark
+            await runBenchmark(iterations);
+        });
+
+        stopBenchmarkBtn.addEventListener('click', () => {
+            if (controller) {
+                controller.abort();
+                logMessage('Benchmark stopped by user');
+
+                const endTime = performance.now();
+                const totalTimeSeconds = (endTime - startTime) / 1000;
+                const opsPerSecond = completedIterations / totalTimeSeconds;
+
+                logMessage(`Partial results: ${completedIterations} iterations in ${totalTimeSeconds.toFixed(2)} seconds`);
+
+                // Calculate channel polling rate
+                const channels = getSelectedChannels();
+                const channelsPerIteration = channels.length;
+                const channelPollingRate = opsPerSecond * channelsPerIteration;
+
+                logMessage(`Waveform polling rate: ${opsPerSecond.toFixed(2)} iterations/second`);
+                logMessage(`Channel data throughput: ${channelPollingRate.toFixed(2)} waveforms/second`);
+
+                // Update metrics display
+                updateMetrics(opsPerSecond, channelPollingRate);
+
+                benchmarkRunning = false;
+                startBenchmarkBtn.disabled = false;
+                stopBenchmarkBtn.disabled = true;
+            }
+        });
+    </script>
+</body>
+
+</html>
