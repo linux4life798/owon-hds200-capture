@@ -9,6 +9,7 @@ https://github.com/pyusb/pyusb/blob/master/docs/faq.rst
 https://github.com/pyusb/pyusb/blob/master/docs/tutorial.rst
 """
 
+from collections.abc import Callable
 from typing import Literal, overload
 import usb.core
 import usb.util
@@ -286,8 +287,10 @@ def main() -> None:
                 print(f"Received {len(values[1])} values for ch2.")
 
                 head = json.loads(response_head)
-                probe_attenuation = list[float]([0.0, 0.0])
-                probe_scale = list[float]([0.0, 0.0])
+                ch_probe_attenuation = list[float]([0.0, 0.0])
+                ch_probe_scale = list[float]([0.0, 0.0])
+                ch_offset = list[int]([0, 0])
+                ch_display = list[bool]([False, False])
 
                 for ch in head["CHANNEL"]:
                     if ch["NAME"] == "CH1":
@@ -299,58 +302,53 @@ def main() -> None:
 
                     probe = ch["PROBE"]
                     scale = ch["SCALE"]
-                    print(f"{ch['NAME']} Probe: {probe}, Scale: {scale}")
+                    offset = ch["OFFSET"]
+                    display = ch["DISPLAY"]
+                    print(
+                        f"{ch['NAME']} Probe: {probe}, Scale: {scale}, Offset: {offset}, Display: {display}"
+                    )
 
                     # Examples: 1X, 10X, 100X, 1000X, 10000X
-                    probe_attenuation[index], units = _split_float_units(probe)
+                    ch_probe_attenuation[index], units = _split_float_units(probe)
                     assert units == "X"
                     # Examples: 10mV, 200mV, 2V, 100V, 500V, 1kV, 10kV
-                    probe_scale[index], units = _split_float_units(scale)
+                    ch_probe_scale[index], units = _split_float_units(scale)
                     if units == "kV":
-                        probe_scale[index] *= 1000
+                        ch_probe_scale[index] *= 1000
                     elif units == "V":
-                        probe_scale[index] *= 1
+                        ch_probe_scale[index] *= 1
                     elif units == "mV":
-                        probe_scale[index] /= 1000
+                        ch_probe_scale[index] /= 1000
                     elif units == "uV":
-                        probe_scale[index] /= 1000000
+                        ch_probe_scale[index] /= 1000000
                     else:
                         raise ValueError(f"Unknown unit: {units}")
-                    print(f"Calculated scale is {probe_scale[index]}")
+                    ch_offset[index] = int(offset)
+                    ch_display[index] = True if display == "ON" else False
+                    print(f"{ch['NAME']} calculated scale is {ch_probe_scale[index]}V")
 
-                # probe_attenuation = list[float]()
-                # probe_attenuation[0] = _split_float_units(head["CHANNEL"][0]["PROBE"])
-                # probe_attenuation[1] = _split_float_units(head["CHANNEL"][1]["PROBE"])
+                ch1_voltage = _data_screen_values_to_voltage(
+                    values[0], ch_probe_attenuation[0], ch_probe_scale[0], ch_offset[0]
+                )
+                ch2_voltage = _data_screen_values_to_voltage(
+                    values[1], ch_probe_attenuation[1], ch_probe_scale[1], ch_offset[1]
+                )
 
-                # ch1_probe_scale = head["CHANNEL"][0]["SCALE"]
-                # ch2_probe_scale = head["CHANNEL"][1]["SCALE"]
-                # atten = int(ch1_probe_atten[:-1])
-                # if ch1_probe_scale.endswith("mV"):
-                #     scale = float(ch1_probe_scale[:-2]) / 1000
-                # elif ch1_probe_scale.endswith("uV"):
-                #     scale = float(ch1_probe_scale[:-2]) / 1000000
-                # else:
-                #     scale = float(ch1_probe_scale[:-1])
-
-                conversion = list[float]()
-                conversion.append(float(probe_attenuation[0]) * probe_scale[0] * 4.0)
-                conversion.append(float(probe_attenuation[1]) * probe_scale[1] * 4.0)
-                print("Channel 1:")
-                for row in _list_reshape(values[0], 20):
-                    print(
-                        " ".join(
-                            f"{float(v) * conversion[0] / 100 : .3f}V" for v in row
-                        )
-                    )
-                # print("Channel 2:")
-                # for row in _list_reshape(values[1], 20):
-                #     print(
-                #         " ".join(
-                #             f"{float(v) * conversion[1] / 100 : .3f}V" for v in row
-                #         )
-                #     )
+                if ch_display[0]:
+                    print("Channel 1:")
+                    for row in _list_reshape(ch1_voltage, 20):
+                        print(" ".join(f"{v : .3f}V" for v in row))
+                else:
+                    print("Channel 1 is off.")
+                if ch_display[1]:
+                    print("Channel 2:")
+                    for row in _list_reshape(ch2_voltage, 20):
+                        print(" ".join(f"{v : .3f}V" for v in row))
+                else:
+                    print("Channel 2 is off.")
                 continue
             elif cmd == "benchmark":
+                print("Benchmark downloading one screen of data.")
                 # Benchmark how long it takes to transfer one screen of data
                 # for a single channel.
                 query = ":DATa:WAVe:SCReen:CH1?"
@@ -363,7 +361,14 @@ def main() -> None:
 
             # Interpret as an SCPI command with the given print mode.
             if print_mode == "str":
-                print(owon.query(cmd))
+                print(
+                    owon.query(
+                        cmd,
+                        binary=False,
+                        length_header=False,
+                        bypass_length_checks=True,
+                    )
+                )
             elif print_mode == "json":
                 try:
                     # The query will consume the first 4 bytes as data length.
@@ -509,6 +514,47 @@ def _parse_and_validate_packet(data: bytes, length_header: bool = False) -> byte
         data = data[:newline]
         assert data.find(b"\n") == -1
     return data
+
+
+@overload
+def _data_screen_values_to_voltage(
+    values: int,
+    probe_attenuation_factor: int,
+    channel_scale: float,
+    channel_offset: int,
+) -> float: ...
+@overload
+def _data_screen_values_to_voltage(
+    values: list[int],
+    probe_attenuation_factor: int,
+    channel_scale: float,
+    channel_offset: int,
+) -> list[float]: ...
+def _data_screen_values_to_voltage(
+    values: int | list[int],
+    probe_attenuation_factor: int,
+    channel_scale: float,
+    channel_offset: int,
+) -> float | list[float]:
+    """Convert a list of data screen values to a list of voltages.
+
+    Args:
+        values: The data screen values to convert
+        probe_attenuation_factor: The probe attenuation factor
+        channel_scale: The channel scale in volts (must apply units) from head query
+        channel_offset: The channel offset from head query
+    """
+
+    real_scale = probe_attenuation_factor * channel_scale
+
+    convert: Callable[[int], float] = (
+        lambda value: (value - channel_offset) * real_scale * 4 / 100
+    )
+
+    if isinstance(values, int):
+        return convert(values)
+    else:
+        return [convert(value) for value in values]
 
 
 if __name__ == "__main__":
