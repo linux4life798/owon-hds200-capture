@@ -306,7 +306,7 @@ Measurement item descriptions:
 
 | Command | Parameters | Description |
 |---------|------------|-------------|
-| `:FUNCtion <waveform>`<br>`:FUNCtion?` | `SINE`, `SQUare`, `RAMP`, `PULSe`, `AmpALT`, `AttALT`, `StairDn`, `tairUD`, `StairUp`, `Besselj`, `Bessely`, `Sinc` | Sets/Queries waveform type. |
+| `:FUNCtion <waveform>`<br>`:FUNCtion?` | `SINE`, `SQUare`, `RAMP`, `PULSe`, `AmpALT`, `AttALT`, `StairDn`, `StairUD`, `StairUp`, `Besselj`, `Bessely`, `Sinc` | Sets/Queries waveform type. |
 | `:FUNCtion:FREQuency <frequency>`<br>`:FUNCtion:FREQuency?` | Floating point (Hz)<br>Note: Not available for DC or noise | Sets/Queries output frequency. |
 | `:FUNCtion:PERiod <period>`<br>`:FUNCtion:PERiod?` | Floating point (seconds)<br>Note: Not available for DC or noise | Sets/Queries output period. |
 | `:FUNCtion:AMPLitude <amplitude>`<br>`:FUNCtion:AMPLitude?` | Floating point (Vpp)<br>Note: Not available for DC | Sets/Queries amplitude (peak-to-peak). |
