@@ -190,6 +190,88 @@ $$
     $$
 </details>
 
+<details>
+<summary>Example <code>:DATa:WAVe:SCReen:head?</code> query</summary>
+
+```scpi
+:DATa:WAVe:SCReen:head?
+```
+
+```json
+{
+    "TIMEBASE": {
+        "SCALE": "500us",
+        "HOFFSET": 0
+    },
+    "SAMPLE": {
+        "FULLSCREEN": 600,
+        "SLOWMOVE": -1,
+        "DATALEN": 600,
+        "SAMPLERATE": "1MSa/s",
+        "TYPE": "SAMPle",
+        "DEPMEM": "8K"
+    },
+    "CHANNEL": [
+        {
+            "NAME": "CH1",
+            "DISPLAY": "ON",
+            "COUPLING": "DC",
+            "PROBE": "10X",
+            "SCALE": "200mV",
+            "OFFSET": 50,
+            "FREQUENCE": 1000.0
+        },
+        {
+            "NAME": "CH2",
+            "DISPLAY": "OFF",
+            "COUPLING": "DC",
+            "PROBE": "1X",
+            "SCALE": "2.00V",
+            "OFFSET": -82,
+            "FREQUENCE": 0.0
+        }
+    ],
+    "DATATYPE": "SCREEN",
+    "RUNSTATUS": "TRIG",
+    "IDN": "owon_v1.2",
+    "MODEL": "HDS272S_1",
+    "Trig": {
+        "Mode": "SINGle",
+        "Type": "Edge",
+        "Items": {
+            "Channel": "CH1",
+            "Level": "1.52V",
+            "Edge": "RISE",
+            "Coupling": "DC",
+            "Sweep": "AUTO"
+        }
+    }
+}
+```
+
+Do note that the individual query commands for scale and offset (seen bellow)
+are reported as the device's user facing voltage value, which take into account
+the probe attenuation. These do not match the scale and offset from head
+(seen above).
+
+```scpi
+> :ch1:scale?
+2.00V
+> :ch1:offset?
+2.00
+> :ch1:probe?
+10X
+
+> :ch2:scale?
+2.00V
+> :ch2:offset?
+-3.28
+> :ch2:probe?
+1X
+```
+*The scale, offset, and probe from the same session as the above head query.*
+</details>
+
 ### Trigger Commands
 
 | Command | Parameters | Description |
