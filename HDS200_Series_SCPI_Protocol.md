@@ -90,6 +90,13 @@ Response: `XXXX,XXXXXXX,2128009,V2.1.1.5`
 
 ## Oscilloscope Commands
 
+### Acquisition Commands
+
+| Command | Parameters | Description |
+|---------|------------|-------------|
+| `:ACQuire:MODe <type>`<br>`:ACQuire:MODe?` | `SAMPle` or `PEAK`<br>Default: `SAMP` | Sets/Queries acquisition mode. |
+| `:ACQuire:DEPMem <mdep>`<br>`:ACQuire:DEPMem?` | `4K` or `8K`<br>Default: `4K` | Sets/Queries memory depth. |
+
 ### Horizontal Commands
 
 | Command | Parameters | Description |
@@ -102,13 +109,6 @@ Time base values:
 * `1.0us`, `2.0us`, `5.0us`, `10us`, `20us`, `50us`, `100us`, `200us`, `500us`
 * `1.0ms`, `2.0ms`, `5.0ms`, `10ms`, `20ms`, `50ms`, `100ms`, `200ms`, `500ms`
 * `1.0s`, `2.0s`, `5.0s`, `10s`, `20s`, `50s`, `100s`, `200s`, `500s`, `1000s`
-
-### Acquisition Commands
-
-| Command | Parameters | Description |
-|---------|------------|-------------|
-| `:ACQuire:MODe <type>`<br>`:ACQuire:MODe?` | `SAMPle` or `PEAK`<br>Default: `SAMP` | Sets/Queries acquisition mode. |
-| `:ACQuire:DEPMem <mdep>`<br>`:ACQuire:DEPMem?` | `4K` or `8K`<br>Default: `4K` | Sets/Queries memory depth. |
 
 ### Channel Commands
 
