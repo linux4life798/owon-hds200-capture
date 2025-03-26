@@ -134,7 +134,7 @@ Available scales by probe attenuation:
 | Command | Description |
 |---------|-------------|
 | `:DATa:WAVe:SCReen:HEAD?` | Returns file header of screen waveform data in JSON format. |
-| `:DATa:WAVe:SCReen:CH<x>?` | Returns screen waveform data of specified channel (x: CH1 or CH2)<br>**Note**: Data points are recorded as signed 8-bit values. The reference program seems to average each two points. |
+| `:DATa:WAVe:SCReen:CH<x>?` | Returns screen waveform data of specified channel (x: `1` or `2`)<br>**Note**: Data points are recorded as signed 8-bit values. The reference program seems to average each two points. |
 
 The device displayed scale is the product of the probe and scale, from this head.
 For example, when the head query reports a scale of `200mV` and a probe of
@@ -302,7 +302,7 @@ Measurement item descriptions:
 
 ## Waveform Generator Commands (Optional)
 
-### Function Commands
+### Function Generator Commands
 
 | Command | Parameters | Description |
 |---------|------------|-------------|
