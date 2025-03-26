@@ -475,7 +475,6 @@ def _parse_and_validate_packet(data: bytes, length_header: bool = False) -> byte
             byteorder="little",
             signed=False,
         )
-        print(f"Declared length of data is {hdr_length}.")
 
         if hdr_length == 0:
             raise ValueError("Received packet header of 0.")
