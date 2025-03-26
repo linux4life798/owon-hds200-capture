@@ -148,10 +148,12 @@ and convert them to their approximate voltages, using the bellow conversion
 formula:
 
 $$
-\frac{\text{value} - \text{ch\_offset}}{100} \times 4 \times \text{ch\_probe\_atten} \times \text{ch\_scale}
+\frac{\text{value} - \text{offset}}{100}
+\times 4 \times \text{probe} \times \text{scale}
 $$
 
-*The scale and probe values are the ones from the head JSON header.*
+*The scale and offset values are the ones from the head JSON header.
+The probe variable refers to the probe attenuation.*
 
 <details>
 <summary>Example:</summary>
@@ -183,11 +185,10 @@ $$
     ```
 3. The first value of `90` would equate to the following voltage:
 
-    $$
-    \frac{90 - 50}{100} \times 4 \times 10 \times 0.2\text{V}
+    $$\frac{90 - 50}{100} \times 4 \times 10 \times 0.2\text{V}
     = \frac{40}{100} \times 4 \times 2\text{V}
-    = 3.2\text{V}
-    $$
+    = 3.2\text{V}$$
+
 </details>
 
 <details>
