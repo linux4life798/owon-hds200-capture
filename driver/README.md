@@ -16,6 +16,9 @@ sudo insmod owon.ko
 echo "module usbserial +p" | sudo tee /sys/kernel/debug/dynamic_debug/control
 # Plug in device.
 sudo chown $USER /dev/ttyUSB0
+# Disable echo (wireshark sees it echoing data from the device back to the device)
+# Disable line ending modification.
+stty -F /dev/ttyUSB0 -echo raw
 echo "*IDN?" >/dev/ttyUSB0
 timeout 1 cat /dev/ttyUSB0
 ```
