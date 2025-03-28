@@ -10,9 +10,10 @@ https://github.com/pyusb/pyusb/blob/master/docs/tutorial.rst
 """
 
 from collections.abc import Callable
-from typing import Literal, overload
+from typing import Literal, overload, Any
 import usb.core
 import usb.util
+import json
 
 
 class OwonUSBSCPI:
@@ -99,7 +100,7 @@ class OwonUSBSCPI:
     @overload
     def _read_response(
         self,
-        binary: Literal[True] = True,
+        binary: Literal[True],
         length_header: bool = False,
         bypass_length_checks: bool = False,
     ) -> bytes | None: ...
@@ -138,11 +139,11 @@ class OwonUSBSCPI:
         # It is still faster to read the largest block of data in one shot,
         # so we do not read the 4 byte header separately.
         try:
-            # data = bytes(self._usb_in.read(self.max_response_size, self._timeout))
-            data = bytes(self._usb_in.read(604, self._timeout))
-            # print(f"Received {len(data)} bytes.")
+            data = bytes(self._usb_in.read(self.max_response_size, self._timeout))
             if not bypass_length_checks:
                 data = _parse_and_validate_packet(data, length_header)
+            if length_header and bypass_length_checks:
+                data = data[4:]
 
         except usb.core.USBTimeoutError:
             print("Timeout")
@@ -168,7 +169,7 @@ class OwonUSBSCPI:
     def query(
         self,
         command: str,
-        binary: Literal[True] = True,
+        data_type: Literal["bin"],
         length_header: bool = False,
         bypass_length_checks: bool = False,
     ) -> bytes | None: ...
@@ -177,29 +178,56 @@ class OwonUSBSCPI:
     def query(
         self,
         command: str,
-        binary: Literal[False] = False,
+        data_type: Literal["str"] = "str",
         length_header: bool = False,
         bypass_length_checks: bool = False,
     ) -> str | None: ...
 
+    @overload
     def query(
         self,
         command: str,
-        binary: bool = False,
+        data_type: Literal["int8"],
+        length_header: Literal[True],
+        bypass_length_checks: bool = False,
+    ) -> list[int] | None: ...
+
+    @overload
+    def query(
+        self,
+        command: str,
+        data_type: Literal["json"],
+        length_header: Literal[True],
+        bypass_length_checks: bool = False,
+    ) -> Any | None: ...
+
+    def query(
+        self,
+        command: str,
+        data_type: Literal["str", "bin", "int8", "json"] = "str",
         length_header: bool = False,
         bypass_length_checks: bool = False,
-    ) -> bytes | str | None:
+    ) -> bytes | str | list[int] | Any | None:
         """Send a command and return the response.
 
         Args:
             command: The SCPI command to send
-            length: Maximum number of bytes to read
+            data_type: Format of returned data ('str', 'bin', 'int8', or 'json')
+            length_header: Whether to expect and use the 4-byte length header
             bypass_length_checks: If enabled, all data length checks are
                 disabled and the full packet is returned.
 
         Returns:
             Response from the device, or None if error.
+            - If data_type is 'str': returns string
+            - If data_type is 'bin': returns raw bytes
+            - If data_type is 'int8': returns list of 8-bit integers
+            - If data_type is 'json': returns parsed JSON object
         """
+
+        # Force length_header=True for int8 data type
+        if data_type == "int8" and not length_header:
+            raise ValueError("int8 data type requires length_header=True")
 
         if not self._send_command(command):
             return None
@@ -208,11 +236,36 @@ class OwonUSBSCPI:
         # missing some initial data. Starting the receive after sending the
         # command does create a race condition, but luckily the oscope device
         # is slow and takes more than 10ms to start responding.
-        return self._read_response(
-            binary=binary,
-            length_header=length_header,
-            bypass_length_checks=bypass_length_checks,
-        )
+
+        if data_type in ["str", "json"]:
+            resp = self._read_response(
+                binary=False,
+                length_header=length_header,
+                bypass_length_checks=bypass_length_checks,
+            )
+            if not resp:
+                return None
+            if data_type == "str":
+                return resp
+            elif data_type == "json":
+                return json.loads(resp)
+        elif data_type in ["bin", "int8"]:
+            resp = self._read_response(
+                binary=True,
+                length_header=length_header,
+                bypass_length_checks=bypass_length_checks,
+            )
+            if not resp:
+                return None
+            if data_type == "bin":
+                return resp
+            elif data_type == "int8":
+                return [
+                    int.from_bytes([byte], byteorder="big", signed=True)
+                    for byte in resp
+                ]
+
+        raise ValueError(f"Unsupported data_type: {data_type}")
 
     def close(self) -> bool:
         """Close the connection to the device.
@@ -228,15 +281,9 @@ class OwonUSBSCPI:
 
 
 def main() -> None:
-    import sys
-    import json
     import time
 
     owon = OwonUSBSCPI()
-
-    if not owon._device:
-        print("Failed to connect to the device.")
-        sys.exit(1)
 
     try:
         print("Connected to OWON device.")
@@ -272,21 +319,21 @@ def main() -> None:
                 query_data_ch1 = ":DATa:WAVe:SCReen:ch1?"
                 query_data_ch2 = ":DATa:WAVe:SCReen:ch2?"
 
-                response_head = owon.query(query_head, binary=False, length_header=True)
+                head = owon.query(query_head, data_type="json", length_header=True)
                 response_data_ch1 = owon.query(
-                    query_data_ch1, binary=True, length_header=True
+                    query_data_ch1, data_type="int8", length_header=True
                 )
                 response_data_ch2 = owon.query(
-                    query_data_ch2, binary=True, length_header=True
+                    query_data_ch2, data_type="int8", length_header=True
                 )
+                if not head or not response_data_ch1 or not response_data_ch2:
+                    print("Failed to read data from the device.")
+                    continue
 
-                values = list[list[int]]()
-                values.append(_parse_channel_data(response_data_ch1))
-                values.append(_parse_channel_data(response_data_ch2))
+                values: list[list[int]] = [response_data_ch1, response_data_ch2]
                 print(f"Received {len(values[0])} values for ch1.")
                 print(f"Received {len(values[1])} values for ch2.")
 
-                head = json.loads(response_head)
                 ch_probe_attenuation = list[float]([0.0, 0.0])
                 ch_probe_scale = list[float]([0.0, 0.0])
                 ch_offset = list[int]([0, 0])
@@ -353,8 +400,8 @@ def main() -> None:
                 # for a single channel.
                 query = ":DATa:WAVe:SCReen:CH1?"
                 start = time.time()
-                for i in range(100):
-                    resp = owon.query(query, binary=True, length_header=True)
+                for _ in range(100):
+                    resp = owon.query(query, data_type="bin", length_header=True)
                 end = time.time()
                 print(f"It takes {((end - start) / 100) * 1000 : .3f} ms per screen.")
                 continue
@@ -364,7 +411,7 @@ def main() -> None:
                 print(
                     owon.query(
                         cmd,
-                        binary=False,
+                        data_type="str",
                         length_header=False,
                         bypass_length_checks=True,
                     )
@@ -372,22 +419,27 @@ def main() -> None:
             elif print_mode == "json":
                 try:
                     # The query will consume the first 4 bytes as data length.
-                    resp = owon.query(cmd, binary=False, length_header=True)
-                    json_data = json.loads(resp)
-                    print(json.dumps(json_data, indent=4))
+                    resp = owon.query(
+                        cmd,
+                        data_type="json",
+                        length_header=True,
+                    )
+                    print(json.dumps(resp, indent=4))
                 except json.JSONDecodeError:
                     print("Failed to decode JSON response.")
-                    print(f"Raw Response:\n{resp}")
             elif print_mode == "bin":
                 # This is purely for debugging, so do not remove the 4 byte
                 # length header. This will cause a warning, given that it can't
                 # find a newline.
                 resp = owon.query(
                     cmd,
-                    binary=True,
+                    data_type="bin",
                     length_header=False,
                     bypass_length_checks=True,
                 )
+                if not resp:
+                    print("Failed to read data from the device.")
+                    continue
                 print(f"Received {len(resp)} bytes.")
                 if len(resp) >= 4:
                     attempted_length = int.from_bytes(
@@ -402,14 +454,16 @@ def main() -> None:
                     print()
             elif print_mode == "int":
                 # The query will consume the first 4 bytes as data length.
-                resp = owon.query(cmd, binary=True, length_header=True)
-                print(f"Received {len(resp)} 8-bit ints.")
-                print(
-                    " ".join(
-                        str(int.from_bytes([byte], byteorder="big", signed=True))
-                        for byte in resp
-                    )
+                resp = owon.query(
+                    cmd,
+                    data_type="int8",
+                    length_header=True,
                 )
+                if not resp:
+                    print("Failed to read data from the device.")
+                    continue
+                print(f"Received {len(resp)} 8-bit ints.")
+                print(" ".join(str(v) for v in resp))
 
     except KeyboardInterrupt:
         print("\nExiting...")
@@ -436,13 +490,9 @@ def _split_float_units(value: str) -> tuple[float, str]:
     return float(value), ""
 
 
-def _list_reshape(data: list[int], width: int) -> list[list[int]]:
+def _list_reshape[T](data: list[T], width: int) -> list[list[T]]:
     """Reshape a list of ints into a list of lists of ints, each with a width."""
     return [data[i : i + width] for i in range(0, len(data), width)]
-
-
-def _parse_channel_data(response: bytes) -> list[int]:
-    return [int.from_bytes([byte], byteorder="big", signed=True) for byte in response]
 
 
 def _parse_and_validate_packet(data: bytes, length_header: bool = False) -> bytes:
