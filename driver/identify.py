@@ -12,7 +12,7 @@ import serial
 
 def main(argv: list[str]):
     if len(argv) != 2:
-        print("Usage: identify_serial.py <device>")
+        print("Usage: identify.py <device>")
         sys.exit(1)
 
     device = sys.argv[1]
