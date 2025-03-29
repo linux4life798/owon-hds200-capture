@@ -101,14 +101,16 @@ Response: `XXXX,XXXXXXX,2128009,V2.1.1.5`
 
 | Command | Parameters | Description |
 |---------|------------|-------------|
-| `:HORIzontal:SCALe <value>`<br>`:HORIzontal:SCALe?` | Time base values from 2.0ns to 1000s, options shown bellow | Sets/Queries main timebase scale. |
-| `:HORIzontal:OFFset <value>`<br>`:HORIzontal:OFFset?` | Integer: Grid offset<br>Default: 0 | Sets/Queries horizontal offset. |
+| `:HORIzontal:SCALe <value>`<br>`:HORIzontal:SCALe?` | Time base values from `2.0ns` to `1000s`, options shown bellow | Sets/Queries main timebase scale. |
+| `:HORIzontal:OFFset <value>`<br>`:HORIzontal:OFFset?` | Float: Grid/division offset<br>Default: 0.0 | Sets/Queries horizontal offset. |
 
 Time base values:
 * `2.0ns`, `5.0ns`, `10.0ns`, `20.0ns`, `50.0ns`, `100ns`, `200ns`, `500ns`
 * `1.0us`, `2.0us`, `5.0us`, `10us`, `20us`, `50us`, `100us`, `200us`, `500us`
 * `1.0ms`, `2.0ms`, `5.0ms`, `10ms`, `20ms`, `50ms`, `100ms`, `200ms`, `500ms`
 * `1.0s`, `2.0s`, `5.0s`, `10s`, `20s`, `50s`, `100s`, `200s`, `500s`, `1000s`
+
+The real time offset is $\text{offset} \times \text{scale}$.
 
 ### Channel Commands
 
