@@ -127,7 +127,9 @@ Available scales by probe attenuation:
 - 10X: `100mV`, `200mV`, `500mV`, `1.00V`, `2.00V`, `5.00V`, `10.0V`, `20.0V`, `50.0V`, `100V`
 - 100X: `1.00V`, `2.00V`, `5.00V`, `10.0V`, `20.0V`, `50.0V`, `100V`, `200V`, `500V`, `1.00kV`
 - 1000X: `10.0V`, `20.0V`, `50.0V`, `100V`, `200V`, `500V`, `1.00kV`, `2.00kV`, `5.00kV`, `10.0kV`
-- 10000X: `100V`, `200V`, `500V`, `1000V`, `2000V`, `5000V`, `10000V`, `20000V`, `50000V`, `100000V`
+- 10000X: `100V`, `200V`, `500V`, `1kV`, `2.00kV`, `5.00kV`, `10.00kV`, `20.00kV`, `50.00kV`, `100kV`
+
+*Setting the kV scales over SCPI is broken. You must do manually. Querying them does work.*
 
 ### Data Commands
 
