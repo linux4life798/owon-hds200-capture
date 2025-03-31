@@ -6,6 +6,17 @@ It's designed for programmers implementing remote control interfaces.
 It is a transcription with corrections to https://files.owon.com.cn/software/Application/HDS200_Series_SCPI_Protocol.pdf.
 
 <details>
+<summary><b>Other OWON SCPI programming guides:</b></summary>
+
+- [HDS200_Series_SCPI_Protocol.pdf](https://files.owon.com.cn/software/Application/HDS200_Series_SCPI_Protocol.pdf)
+- [SDS200_programming_manual.pdf](https://files.owon.com.cn/software/Application/SDS200_programming_manual.pdf)
+- [XDM1000_Digital_Multimeter_Programming_Manual.pdf](https://files.owon.com.cn/software/Application/XDM1000_Digital_Multimeter_Programming_Manual.pdf)
+- [FDS_Series_Programming_Manual.pdf](http://files.owon.com.cn/software/Application/FDS_Series_Programming_Manual.pdf)
+- [XDS3000_Four-Channel_Series_Oscilloscopes_SCPI_Protocol.pdf](https://files.owon.com.cn/software/Application/XDS3000_Four-Channel_Series_Oscilloscopes_SCPI_Protocol.pdf)
+
+</details>
+
+<details>
 <summary><b>SCPI Syntax Fundamentals</b></summary>
 
 SCPI commands use a hierarchical tree structure with multiple subsystems. Key syntax elements:
