@@ -9,11 +9,14 @@ https://github.com/pyusb/pyusb/blob/master/docs/faq.rst
 https://github.com/pyusb/pyusb/blob/master/docs/tutorial.rst
 """
 
+import json
 from collections.abc import Callable
-from typing import Literal, overload, Any
+from typing import Any, Literal, overload
+
 import usb.core
 import usb.util
-import json
+
+import utils
 
 
 class OwonUSBSCPI:
@@ -356,10 +359,10 @@ def main() -> None:
                     )
 
                     # Examples: 1X, 10X, 100X, 1000X, 10000X
-                    ch_probe_attenuation[index], units = _split_float_units(probe)
+                    ch_probe_attenuation[index], units = utils.split_float_units(probe)
                     assert units == "X"
                     # Examples: 10mV, 200mV, 2V, 100V, 500V, 1kV, 10kV
-                    ch_probe_scale[index], units = _split_float_units(scale)
+                    ch_probe_scale[index], units = utils.split_float_units(scale)
                     if units == "kV":
                         ch_probe_scale[index] *= 1000
                     elif units == "V":
@@ -470,24 +473,6 @@ def main() -> None:
 
     finally:
         owon.close()
-
-
-def _split_int_units(value: str) -> tuple[int, str]:
-    """Parse a number with units from string as an int."""
-
-    for i, c in enumerate(value):
-        if not c.isdigit():
-            return int(value[:i]), value[i:]
-    return int(value), ""
-
-
-def _split_float_units(value: str) -> tuple[float, str]:
-    """Parse a number with units from string as a float."""
-
-    for i, c in enumerate(value):
-        if not c.isdigit() and c != ".":
-            return float(value[:i]), value[i:]
-    return float(value), ""
 
 
 def _list_reshape[T](data: list[T], width: int) -> list[list[T]]:
