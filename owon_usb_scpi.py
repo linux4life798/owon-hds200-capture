@@ -165,6 +165,8 @@ class OwonUSBSCPI:
 
         Returns:
             True if command was sent successfully, False otherwise.
+
+        TODO: Add the ability to wait/poll until the setting takes affect.
         """
         return self._send_command(command)
 
@@ -226,6 +228,8 @@ class OwonUSBSCPI:
             - If data_type is 'bin': returns raw bytes
             - If data_type is 'int8': returns list of 8-bit integers
             - If data_type is 'json': returns parsed JSON object
+
+        TODO: Add ability to handle concatenated commands with multiple responses.
         """
 
         # Force length_header=True for int8 data type
