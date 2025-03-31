@@ -372,3 +372,7 @@ Frequency limitations by model:
 4. **Character Encoding**: The documentation doesn't specify character encoding for string responses. ASCII is implied, but UTF-8 compatibility should be verified.
 
 5. **Device Hanging Issue**: The HDS272S itself hangs if you try to enable/disable a measurement like `:MEASurement:ch1 min`.
+
+6. **Abbreviating Commands**: Abbreviating the first part of a command does not always work on the HDS200. For example, `:HORIzontal:SCALe?` works, but `:HORIzonta:SCALe?` does not.
+
+7. **Command Concatenation:** This does seem to be supported on the HDS200, but this library cannot use it. For example, you can query `:horizontal:SCALe?;:HORIzontal:OFFset?` and get both the scale and offset, in one query. You could also query `:DATa:WAVe:SCReen:ch1?;:DATa:WAVe:SCReen:ch2?` and theoretically get both channels of data.
