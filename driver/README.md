@@ -87,3 +87,16 @@ Device Descriptor:
 Device Status:     0x0000
   (Bus Powered)
 ```
+
+## Alternative Generic Serial Driver
+
+```bash
+# When the generic serial drive is compiled as a module:
+sudo modprobe usbserial vendor=0x5345 product=0x1234
+
+# When it is compiled into the kernel:
+echo 5345 1234 | sudo tee /sys/bus/usb-serial/drivers/generic/new_id
+```
+
+See https://docs.kernel.org/usb/usb-serial.html#generic-serial-driver for more
+information.
