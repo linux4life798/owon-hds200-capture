@@ -12,8 +12,8 @@ similar to "device is busy or in use", the following help guide is for you.**
 
 ## For Users
 
-Please file a bug with software maintainer and point them to this document to
-correct the behavior in code. In the meantime, here are some workarounds:
+Please file a bug with the software maintainer and point them to this document
+to correct the behavior in code. In the meantime, here are some workarounds:
 
 <details>
 <summary>Simple</summary>
@@ -130,7 +130,7 @@ if usb_device.is_kernel_driver_active(0):
     reattach = True
     usb_device.detach_kernel_driver(0)
 
-# claim and configuration ...
+# claim and configure ...
 
 # Closing:
 if reattach:
