@@ -1,8 +1,7 @@
-# Using libUSB with usb_serial_simple Support
+# Using Libusb Utilities/Libraries with OWON Devices
 
-[OWON oscilloscope support](https://github.com/torvalds/linux/commit/4cc01410e1c1dd075df10f750775c81d1cb6672b) landed upstream in the usb-serial-simple kernel driver
+Linux kernel [OWON oscilloscope support](https://github.com/torvalds/linux/commit/4cc01410e1c1dd075df10f750775c81d1cb6672b) landed upstream in the usb-serial-simple kernel driver
 on April 25, 2025 in [this merge](https://github.com/torvalds/linux/commit/2d5c7fe09739d49612e69ad61ced0a0f19651769).
-
 This means that you can now interface with OWON devices over a simple serial
 interface, say /dev/ttyUSB0 ([example](identify.py)), rather than raw libusb. Although this is a win for
 new libraries, existing OWON utilities/libraries may still use libusb.
