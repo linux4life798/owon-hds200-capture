@@ -12,12 +12,14 @@ https://files.owon.com.cn/software/Application/HDS200_Series_SCPI_Protocol.pdf
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Self
+from typing import Any, Literal, Self
 
 import numpy as np
 import pint
 import plotly.graph_objects as go
 
+from owon_scpi_base import OwonSCPI
+from owon_serial_scpi import OwonSerialSCPI
 from owon_usb_scpi import OwonUSBSCPI
 
 
@@ -87,11 +89,31 @@ class OwonDevice:
 
     id: DeviceIdentification
 
-    def __init__(self):
+    def __init__(
+        self,
+        transport: Literal["serial", "usb"] = "serial",
+        serial_device: str = OwonSerialSCPI.DEFAULT_DEVICE,
+        usb_vendor_id: int = OwonUSBSCPI.HDS272S_USB_VENDOR_ID,
+        usb_product_id: int = OwonUSBSCPI.HDS272S_USB_PRODUCT_ID,
+        usb_ep_out: int = 0x01,
+        usb_ep_in: int = 0x81,
+    ) -> None:
         """Initialize and connect to the oscilloscope."""
-        self.scpi = OwonUSBSCPI(
-            usb_vendor_id=0x5345, usb_product_id=0x1234, usb_ep_out=0x01, usb_ep_in=0x81
-        )
+        transport_client: OwonSCPI
+
+        if transport == "serial":
+            transport_client = OwonSerialSCPI(device=serial_device)
+        elif transport == "usb":
+            transport_client = OwonUSBSCPI(
+                usb_vendor_id=usb_vendor_id,
+                usb_product_id=usb_product_id,
+                usb_ep_out=usb_ep_out,
+                usb_ep_in=usb_ep_in,
+            )
+        else:
+            raise ValueError(f"Unsupported transport: {transport}")
+
+        self.scpi: OwonSCPI = transport_client
 
         # Get device identification
         id = self.identify()
