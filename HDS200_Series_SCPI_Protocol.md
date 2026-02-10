@@ -383,3 +383,17 @@ Frequency limitations by model:
 6. **Abbreviating Commands**: Abbreviating the first part of a command does not always work on the HDS200. For example, `:HORIzontal:SCALe?` works, but `:HORIzonta:SCALe?` does not.
 
 7. **Command Concatenation:** This does seem to be supported on the HDS200, but this library cannot use it. For example, you can query `:horizontal:SCALe?;:HORIzontal:OFFset?` and get both the scale and offset, in one query. You could also query `:DATa:WAVe:SCReen:ch1?;:DATa:WAVe:SCReen:ch2?` and theoretically get both channels of data.
+
+
+## Model Variant Details
+
+| Model Variant Key(s) | Timebase List Start Index | Vertical Scale List Start Index | Channel Count | Sample Bit Depth | Pixels per Horizontal Division | Pixels per Vertical Division | Horizontal Divisions | Vertical Divisions |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| base | 0 | 0 | 2 | 9 | 25 | 25 | 12.0 | 8 |
+| HDS272_1, HDS272S_1, HDS242_1, HDS242S_1, HDS252_1, HDS252S_1, HDS272SE_1, HDS252U_1, HDS252SU_1 | 5 | 0 | 2 | 9 | 25 | 25 | 12.0 | 8 |
+| HDS2102S_LS, HDS2102_LS, HDS2102SE_LS, HDS2102U_LS, HDS2102SU_LS | 4 | 0 | 2 | 9 | 25 | 25 | 12.0 | 8 |
+| HDS2202S_LS, HDS2202_LS, HDS2202SE_LS | 3 | 0 | 2 | 9 | 25 | 25 | 12.0 | 8 |
+| HDS241, HDS251, HDS271 | 5 | 0 | 1 | 9 | 25 | 25 | 12.0 | 8 |
+
+*The model variant key is the prefix of the device model, as identified in
+`*ODN?` or `:MODEL?`.*
