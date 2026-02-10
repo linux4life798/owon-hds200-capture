@@ -8,61 +8,9 @@ import json
 import time
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import Any, Literal, Protocol, Self, overload
+from typing import Any, Literal, Self, overload
 
 import utils
-
-
-class OwonSCPI(Protocol):
-    """Minimal SCPI interface used by higher-level device logic."""
-
-    def set(self, command: str) -> bool: ...
-
-    @overload
-    def query(
-        self,
-        command: str,
-        data_type: Literal["bin"],
-        length_header: bool = False,
-        bypass_length_checks: bool = False,
-    ) -> bytes | None: ...
-
-    @overload
-    def query(
-        self,
-        command: str,
-        data_type: Literal["str"] = "str",
-        length_header: bool = False,
-        bypass_length_checks: bool = False,
-    ) -> str | None: ...
-
-    @overload
-    def query(
-        self,
-        command: str,
-        data_type: Literal["int8"],
-        length_header: Literal[True],
-        bypass_length_checks: bool = False,
-    ) -> list[int] | None: ...
-
-    @overload
-    def query(
-        self,
-        command: str,
-        data_type: Literal["json"],
-        length_header: Literal[True],
-        bypass_length_checks: bool = False,
-    ) -> Any | None: ...
-
-    def query(
-        self,
-        command: str,
-        data_type: Literal["str", "bin", "int8", "json"] = "str",
-        length_header: bool = False,
-        bypass_length_checks: bool = False,
-    ) -> bytes | str | list[int] | Any | None: ...
-
-    def close(self) -> bool: ...
 
 
 class OwonSCPIBase(ABC):

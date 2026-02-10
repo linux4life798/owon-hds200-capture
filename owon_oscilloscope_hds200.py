@@ -18,7 +18,7 @@ import numpy as np
 import pint
 import plotly.graph_objects as go
 
-from owon_scpi_base import OwonSCPI
+from owon_scpi_base import OwonSCPIBase
 from owon_serial_scpi import OwonSerialSCPI
 from owon_usb_scpi import OwonUSBSCPI
 
@@ -99,7 +99,7 @@ class OwonDevice:
         usb_ep_in: int = 0x81,
     ) -> None:
         """Initialize and connect to the oscilloscope."""
-        transport_client: OwonSCPI
+        transport_client: OwonSCPIBase
 
         if transport == "serial":
             transport_client = OwonSerialSCPI(device=serial_device)
@@ -113,7 +113,7 @@ class OwonDevice:
         else:
             raise ValueError(f"Unsupported transport: {transport}")
 
-        self.scpi: OwonSCPI = transport_client
+        self.scpi: OwonSCPIBase = transport_client
 
         # Get device identification
         id = self.identify()
