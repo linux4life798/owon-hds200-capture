@@ -99,6 +99,13 @@ Response: `XXXX,XXXXXXX,2128009,V2.1.1.5`
 | `*IDN?` | Returns device identification string as `<Manufacturer>,<model>,<serial number>,X.XX.XX` |
 | `*RST` | Seems to reset the device communication. Undocumented. |
 
+## Undocumented Commands
+
+| Command | Description |
+|---------|-------------|
+| `*ODN?` | Same as `*IDN?`, but *\<model\>* is more specific, like `HDS272S_1` |
+| `:MODEL?` | The specific model with underscore revision, like `HDS272S_1`, rather than `HDS272S` |
+
 ## Oscilloscope Commands
 
 ### Acquisition Commands
