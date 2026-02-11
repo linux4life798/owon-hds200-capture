@@ -389,7 +389,7 @@ Frequency limitations by model:
 
 | Model Variant Key(s) | Timebase List Start Index | Vertical Scale List Start Index | Channel Count | Sample Bit Depth | Pixels per Horizontal Division | Pixels per Vertical Division | Horizontal Divisions | Vertical Divisions |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| | xbase_index | ybase_index | channel_count | max_bit | x_block_pixels | y_block_pixels | x_graticule_num | y_graticule_num |
+| | **xbase_index** | **ybase_index** | **channel_count** | **max_bit** | **x_block_pixels** | **y_block_pixels** | **x_graticule_num** | **y_graticule_num** |
 | base | 0 | 0 | 2 | 9 | 25 | 25 | 12.0 | 8 |
 | HDS272_1, HDS272S_1, HDS242_1, HDS242S_1, HDS252_1, HDS252S_1, HDS272SE_1, HDS252U_1, HDS252SU_1 | 5 | 0 | 2 | 9 | 25 | 25 | 12.0 | 8 |
 | HDS2102S_LS, HDS2102_LS, HDS2102SE_LS, HDS2102U_LS, HDS2102SU_LS | 4 | 0 | 2 | 9 | 25 | 25 | 12.0 | 8 |
