@@ -30,6 +30,49 @@ class DeviceIdentification:
     serial_number: str
     firmware_version: str
 
+    @dataclass(frozen=True, slots=True)
+    class _ModelDetail:
+        xbase_index: int
+        ybase_index: int
+        channel_count: int
+        max_bit: int
+        x_block_pixels: int
+        y_block_pixels: int
+        x_graticule_num: float
+        y_graticule_num: int
+
+    _BASE_DETAIL: ClassVar[_ModelDetail] = _ModelDetail(0, 0, 2, 9, 25, 25, 12.0, 8)
+    _HDS2_X5_2CH: ClassVar[_ModelDetail] = _ModelDetail(5, 0, 2, 9, 25, 25, 12.0, 8)
+    _HDS2_X4_2CH: ClassVar[_ModelDetail] = _ModelDetail(4, 0, 2, 9, 25, 25, 12.0, 8)
+    _HDS2_X3_2CH: ClassVar[_ModelDetail] = _ModelDetail(3, 0, 2, 9, 25, 25, 12.0, 8)
+    _HDS2_X5_1CH: ClassVar[_ModelDetail] = _ModelDetail(5, 0, 1, 9, 25, 25, 12.0, 8)
+
+    _MODEL_DETAIL_TABLE: ClassVar[Mapping[str, _ModelDetail]] = MappingProxyType(
+        {
+            "base": _BASE_DETAIL,
+            "HDS272_1": _HDS2_X5_2CH,
+            "HDS272S_1": _HDS2_X5_2CH,
+            "HDS242_1": _HDS2_X5_2CH,
+            "HDS242S_1": _HDS2_X5_2CH,
+            "HDS252_1": _HDS2_X5_2CH,
+            "HDS252S_1": _HDS2_X5_2CH,
+            "HDS272SE_1": _HDS2_X5_2CH,
+            "HDS2102S_LS": _HDS2_X4_2CH,
+            "HDS2102_LS": _HDS2_X4_2CH,
+            "HDS2102SE_LS": _HDS2_X4_2CH,
+            "HDS2202S_LS": _HDS2_X3_2CH,
+            "HDS2202_LS": _HDS2_X3_2CH,
+            "HDS2202SE_LS": _HDS2_X3_2CH,
+            "HDS241": _HDS2_X5_1CH,
+            "HDS251": _HDS2_X5_1CH,
+            "HDS271": _HDS2_X5_1CH,
+            "HDS252U_1": _HDS2_X5_2CH,
+            "HDS252SU_1": _HDS2_X5_2CH,
+            "HDS2102U_LS": _HDS2_X4_2CH,
+            "HDS2102SU_LS": _HDS2_X4_2CH,
+        }
+    )
+
     def __str__(self) -> str:
         return (
             f"Make/Model: {self.manufacturer} {self.model}\n"
