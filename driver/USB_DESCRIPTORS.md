@@ -2,6 +2,7 @@
 
 * https://usb-ids.gowdy.us/read/UD/5345/1234
 * https://bugzilla.kernel.org/show_bug.cgi?id=220193
+* https://lore.kernel.org/linux-usb/20260810091322.2201740-1-huangwei@kylinos.cn/
 
 ## Inquiries
 
