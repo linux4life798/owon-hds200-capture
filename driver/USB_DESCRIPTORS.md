@@ -223,7 +223,7 @@ Device Descriptor:
 ```
 </details>
 
-## VDS1120
+## VDS1022
 
 <img width="128" src="https://github.com/user-attachments/assets/adeda226-dcf3-4798-8241-ff53160da046" />
 
