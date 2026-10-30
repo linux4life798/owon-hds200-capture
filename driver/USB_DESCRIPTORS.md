@@ -1,5 +1,16 @@
 # OWON Models + FW and USB Descriptors
 
+* https://usb-ids.gowdy.us/read/UD/5345/1234
+* https://bugzilla.kernel.org/show_bug.cgi?id=220193
+
+## Inquiries
+
+* https://github.com/lucky62/OWON_SDS1102_Linux_Capture/issues/1
+* https://github.com/mjkloeckner/TB066/issues/1
+* https://github.com/JohnDWilbourn/owon-hds200/issues/1
+* https://github.com/einsz/whoop_thrust_stand/issues/1
+* https://github.com/mkreutner/hds-mirror/issues/1
+* https://github.com/scottsun2020/owon-electronic-load-tests/issues/1
 
 ## HDS200
 
