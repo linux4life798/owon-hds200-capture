@@ -301,6 +301,8 @@ cannot read device status, Resource temporarily unavailable (11)
 
 From https://github.com/florentbr/OWON-VDS1022/issues/54#issuecomment-1120191539
 
+Board version `4.0.0` from https://github.com/florentbr/OWON-VDS1022/issues/54#issuecomment-1120242373 .
+
 ```
 Bus 001 Device 004: ID 5345:1234 Owon PDS6062T Oscilloscope
 Device Descriptor:
