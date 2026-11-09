@@ -159,7 +159,7 @@ Device Status:     0x0000
 <img width="128" src="https://github.com/user-attachments/assets/ef60a36d-9931-499b-a439-3bea4018a3e9" />
 
 <details>
-  <summary>@lucky62's OWON SDS1102</summary>
+  <summary>@lucky62's OWON SDS1102 running firmware V4.0.1</summary>
 
 From https://github.com/lucky62/OWON_SDS1102_Linux_Capture/issues/1
 
